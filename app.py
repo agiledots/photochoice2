@@ -52,52 +52,57 @@ def download_filename(url, path):
         shutil.copyfileobj(response.raw, out_file)
 
 
-def get_image_links(driver, data):
+
+def download_images(driver, data):
 
     for event in data:
-        for category in event["category"]:
-            category_title = category["category_title"]
-            category_url = category["category_url"]
-
-            driver.get(category_url)
-
-            # press the crtl + end key
-            actionChains = ActionChains(driver)
-            for i in range(20):
-                actionChains.key_down(Keys.CONTROL + Keys.END).perform()
-
-            time.sleep(1)
-
-            image_list = []
-            image_urls = driver.find_elements_by_css_selector("#p_list_loop img")
-            for image_url in image_urls:
-                real_image_url = get_real_image_url(image_url.get_attribute("src"))
-                if real_image_url:
-                    image_list.append(real_image_url)
-
-            category["images"] = image_list
-
-
-def download_images(data):
-    for event in data:
+        # 以活动为单位的目录
         event_name = event["event_name"]
-
         event_path = os.path.join("images", event_name)
         if not os.path.exists(event_path):
             os.mkdir(event_path)
 
         for category in event["category"]:
             category_title = category["category_title"]
+            category_url = category["category_url"]
 
+            # 以活动分类为单位的目录
             category_path = os.path.join(event_path, category_title)
             if not os.path.exists(category_path):
                 os.mkdir(category_path)
 
-            images = category["images"]
-            for index, image_url in enumerate(images):
-                save_path = os.path.join(category_path, "{:0>5d}.jpg".format(index+1))
-                print("download file {} from {}".format(save_path, image_url))
-                download_filename(image_url, save_path)
+            # 获取活动分类页面的信息
+            driver.get(category_url)
+
+            # 跳转到页面最后，以时间动态加载所有图片
+            # press the crtl + end key
+            actionChains = ActionChains(driver)
+            for i in range(20):
+                actionChains.key_down(Keys.CONTROL + Keys.END).perform()
+            # 等待加载完成
+            time.sleep(1)
+
+            # 获取页面所有图片略缩图的链接
+            image_urls = driver.find_elements_by_css_selector("#p_list_loop img")
+            count = 0
+            for image_url in image_urls:
+                # 获取图片真实现在地址
+                real_image_url = get_real_image_url(image_url.get_attribute("src"))
+                if not real_image_url:
+                    continue
+
+                # 下载照片
+                count = count + 1
+                save_path = os.path.join(category_path, "{:0>5d}.jpg".format(count))
+                print("downloading file {} from {}".format(save_path, real_image_url))
+                download_filename(real_image_url, save_path)
+
+
+def filter_name(str):
+    title, date = re.split("\n", str)
+    title = re.split("\s", title)
+    date = re.split("\s", date)
+    return "{}_{}".format(date[0], "".join(title))
 
 
 def get_event_list(driver):
@@ -120,8 +125,7 @@ def get_event_list(driver):
             continue
 
         # 标题整形
-        split_title = re.split("\s", event_title)
-        event_title = "{}-{}".format(split_title[1], split_title[0])
+        event_title = filter_name(event_title)
 
         print((event_title, event_url))
         event_url_list.append((event_title, event_url))
@@ -171,16 +175,6 @@ def get_event_category_list(driver, event_url_list):
 
 if __name__ == "__main__":
 
-    data_file = "data.json"
-    if os.path.exists(data_file) and os.path.isfile(data_file):
-        text = utils.read_file(data_file)
-        data = json.loads(text)
-        # 下载照片
-        download_images(data)
-        #
-        sys.exit()
-
-
     # create chrome driver
     chromedriver = "./chromedriver.exe"
     driver = webdriver.Chrome(chromedriver, chrome_options=Options());
@@ -199,14 +193,12 @@ if __name__ == "__main__":
     # 获取所有活动的详细分类信息
     data = get_event_category_list(driver, event_url_list)
 
-    # 获取单一页面的照片信息
-    get_image_links(driver, data)
-
     # 保存数据
     text = json.dumps(data, indent=4, sort_keys=False, ensure_ascii=False)
     utils.write_file("data.json", text)
 
-    # 下载照片
-    download_images(data)
+    # 获取单一页面的照片信息
+    download_images(driver, data)
+
 
     sys.exit()
