@@ -13,6 +13,7 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
+import datetime
 
 def login(driver, username, password):
 
@@ -71,6 +72,12 @@ def download_images(driver, data):
             if not os.path.exists(category_path):
                 os.mkdir(category_path)
 
+            # # 如果当前文件夹下有图片文件，表示之前已经下载过，取消当前活动的下载
+            # existed_file_list = [filename for filename in os.listdir(category_path) if os.path.splitext(filename)[1] == '.jpg']
+            # if existed_file_list:
+            #     print("该里包含有图片文件，不进行下载！{}".format(category_path))
+            #     continue
+
             # 获取活动分类页面的信息
             driver.get(category_url)
 
@@ -79,14 +86,16 @@ def download_images(driver, data):
             actionChains = ActionChains(driver)
             for i in range(20):
                 actionChains.key_down(Keys.CONTROL + Keys.END).perform()
+                time.sleep(0.5)
             # 等待加载完成
             time.sleep(1)
 
             # 获取页面所有图片略缩图的链接
             image_urls = driver.find_elements_by_css_selector("#p_list_loop img")
             count = 0
+
             for image_url in image_urls:
-                # 获取图片真实现在地址
+                # 获取图片真实地址
                 real_image_url = get_real_image_url(image_url.get_attribute("src"))
                 if not real_image_url:
                     continue
@@ -94,6 +103,11 @@ def download_images(driver, data):
                 # 下载照片
                 count = count + 1
                 save_path = os.path.join(category_path, "{:0>5d}.jpg".format(count))
+
+                if os.path.isfile(save_path) and os.path.exists(save_path):
+                    # 文件存在，不再下载
+                    continue
+
                 print("downloading file {} from {}".format(save_path, real_image_url))
                 download_filename(real_image_url, save_path)
 
@@ -195,10 +209,10 @@ if __name__ == "__main__":
 
     # 保存数据
     text = json.dumps(data, indent=4, sort_keys=False, ensure_ascii=False)
-    utils.write_file("data.json", text)
+    json_file = "data_{}.json".format(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+    utils.write_file(json_file, text)
 
     # 获取单一页面的照片信息
     download_images(driver, data)
-
 
     sys.exit()

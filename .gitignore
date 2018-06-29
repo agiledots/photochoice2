@@ -103,6 +103,7 @@ ENV/
 .idea/
 images/
 password.txt
+data*.json
 
 
 
