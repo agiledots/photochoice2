@@ -9,7 +9,7 @@
 ```
 
 + 密码文件
-  > 与 **app.py** 相同的文件夹内创建密码文件 **password.txt**,用户名和密码用冒号**:**隔开，如：username@domain.com:password
+  > 与 **app.py** 相同的文件夹内创建密码文件 **password.txt**,用户名和密码用冒号 **:** 隔开，如：username@domain.com:password
 
 + 执行
 ```

@@ -17,6 +17,7 @@ import datetime
 
 def get_login_info():
     username, password = ("", "")
+
     # 读取用户名和密码
     password_file = "./password.txt"
     if os.path.isfile(password_file) and os.path.exists(password_file):
