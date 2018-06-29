@@ -15,6 +15,18 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
 import datetime
 
+def get_login_info():
+    username, password = ("", "")
+    # 读取用户名和密码
+    password_file = "./password.txt"
+    if os.path.isfile(password_file) and os.path.exists(password_file):
+        text = utils.read_file(password_file)
+        username, password = text.split(":")
+    else:
+        print("password file is not exist, please create file 'password.txt' at current directory.")
+    return (username, password)
+
+
 def login(driver, username, password):
 
     elem_username = driver.find_element_by_name("email")
@@ -187,16 +199,19 @@ def get_event_category_list(driver, event_url_list):
     return data
 
 
+
+
 if __name__ == "__main__":
+
+    username, password = get_login_info()
+    if username == "" or password == "":
+        print("can't find login info. please check password.txt file.")
+        sys.exit()
 
     # create chrome driver
     chromedriver = "./chromedriver.exe"
     driver = webdriver.Chrome(chromedriver, chrome_options=Options());
     driver.get("https://snapsnap.jp/")
-
-    # 读取用户名和密码
-    text = utils.read_file("./password.txt")
-    username, password = text.split(":")
 
     # 登陆
     login(driver, username, password)
