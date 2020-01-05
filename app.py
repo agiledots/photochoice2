@@ -46,6 +46,7 @@ def get_real_image_url(image_link):
         key = re.findall(pattern, image_link)
 
         file_name = key[0]
+        # "http://image3.photochoice.net/r/tn_721226_1809_1613903_1029931941_6d5efc845d625f860cbed65feb0fb088_1544230552/pc_watermark_6_h/0/"
         url = "http://image3.photochoice.net/r/tn_{0}/pc_watermark_6_h/0/".replace("{0}", file_name)
     except Exception as e:
         print("get_real_image_url Error: {}".format(e))
@@ -99,7 +100,7 @@ def download_images(driver, data):
             actionChains = ActionChains(driver)
             for i in range(20):
                 actionChains.key_down(Keys.CONTROL + Keys.END).perform()
-                time.sleep(0.5)
+                time.sleep(0.2)
             # 等待加载完成
             time.sleep(1)
 
@@ -134,12 +135,15 @@ def filter_name(str):
 
 def get_event_list(driver):
     # 关闭弹窗
-    elem_album_close = driver.find_element_by_id("modal_album_close")
-    if elem_album_close:
-        elem_album_close.click()
+    try:
+        elem_album_close = driver.find_element_by_id("modal_album_close")
+        if elem_album_close:
+            elem_album_close.click()
+    except Exception as e:
+        print("get_event_list Error: {}".format(e))
 
     # 等待一段时间
-    time.sleep(3)
+    time.sleep(2)
 
     # 获取页面所有活动列表
     # print("driver.current_url:{}".format(driver.current_url))
